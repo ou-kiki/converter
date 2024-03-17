@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>converter</title>
+  <!-- Import style -->
+  <link
+    rel="stylesheet"
+    href="//cdn.jsdelivr.net/npm/element-plus/dist/index.css"
+  />
+  <!-- Import Vue 3 -->
+  <script src="//cdn.jsdelivr.net/npm/vue@3"></script>
+  <!-- Import component library -->
+  <script src="//cdn.jsdelivr.net/npm/element-plus"></script>
+  <script src="//cdn.jsdelivr.net/npm/@element-plus/icons-vue"></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any"></script>
+  <!--Disabling Tailwind Preflight-->
+  <script>
+  // tailwind.config.js
+  tailwind.config = {
+    corePlugins: {
+      preflight: false,
+    },
+  }
+  </script>
+  <style type="text/tailwindcss">
+    html,
+    body,
+    #app {
+      @apply w-full h-full;
+    }
+    .upload-container {
+      @apply w-[700px] rounded-lg bg-[#98d3ed]/[.25] p-[20px] m-auto;
+      backdrop-filter: blur(5px);
+      z-index: 16;
+    }
+    .upload {
+      @apply w-full h-full;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="flex justify-center items-center mb-[10px]">
+    <el-button class="w-[120px]" type="danger" @click="fileList = []" :disabled="fileList.length === 0">清除</el-button>
+    <el-button class="w-[120px]" type="primary" @click="convertImage" :disabled="fileList.length === 0">转换</el-button>
+    <el-button class="w-[120px]" type="primary" @click="convertImage" :disabled="fileList.length === 0">一键下载</el-button>
+  </div>
+
+  <div class="upload-container">
+    <el-upload
+      v-model:file-list="fileList"
+      class="upload"
+      accept=".heic"
+      drag
+      multiple
+      :on-change="handleChange"
+      :on-remove="handleRemove"
+      :auto-upload="false"
+    >
+      <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+      <div class="el-upload__text">
+        Drop file here or <em>click to upload</em>
+      </div>
+
+      <!--是否压缩-->
+      <!--是否线上链接-->
+
+      <template #tip>
+        <div class="el-upload__tip">
+          <!--HEIC files with a size less than 5M-->
+        </div>
+      </template>
+    </el-upload>
+  </div>
+
+</div>
+
+</body>
+
+<script>
+const { createApp, ref } = Vue
+
+const app = createApp({
+  setup() {
+    const message = ref('Hello Vue!')
+    const fileList = ref([])
+    const handleRemove= (file, uploadFiles) => {
+      console.log('handleRemove', file, uploadFiles)
+    }
+
+    const handleChange = (file, files) => {
+      console.log('handleChange, files', file, files);
+    }
+
+    const convertImage = () => {
+      for (const { raw, name } of fileList.value) {
+        heic2any({
+          blob: raw,
+          toType: "image/jpeg", // 或 "image/png"，取决于你的需求
+          quality: 0.8 // 转换质量，仅对jpg有效
+        })
+          .then((conversionResult) => {
+            const filename = `${name.replace('.HEIC', '')}.jpeg`
+            download(conversionResult, filename)
+          })
+          .catch(function (e) {
+            console.error(e);
+            alert("图片转换失败！");
+          });
+      }
+    }
+
+    function download(blob, filename) {
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(blobUrl);
+    }
+
+    return {
+      handleRemove,
+      handleChange,
+      convertImage,
+      message,
+      fileList
+    }
+  }
+})
+
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
+}
+app.use(ElementPlus);
+app.mount("#app");
+</script>
+
+</html>
